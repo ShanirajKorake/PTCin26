@@ -41,7 +41,7 @@ export const formatInvoiceId = (count) => {
  */
 const isGeneratedInvoiceNo = (invoiceNo) => {
     // Matches 'P-' followed by exactly 6 digits
-    return /^P-\d{6}$/.test(invoiceNo); 
+    return /^P26-\d{4}$/.test(invoiceNo); 
 };
 
 
@@ -90,6 +90,7 @@ export const incrementInvoiceCounter = async () => {
             column: COUNTER_COLUMN_KEY,
             value: 1
         });
+        console.log(`Successfully incremented counter for row '${COUNTER_ROW_ID}'`);
         return updatedRow[COUNTER_COLUMN_KEY];
     } catch (error) {
         console.error(`Error atomically incrementing counter for row '${COUNTER_ROW_ID}':`, error);
@@ -186,7 +187,7 @@ export const generateAndSaveInvoice = async (invoiceData) => {
         // --- Standard (P-XXXXXX) Invoice Processing ---
 
         let counter = await getInvoiceCounter();
-        const incomingIdValue = parseInt(currentInvoiceNo.replace('P-', ''), 10);
+        const incomingIdValue = parseInt(currentInvoiceNo.replace('P26-', ''), 10);
         
         let result;
 
@@ -239,12 +240,12 @@ export const generateAndSaveInvoice = async (invoiceData) => {
 
                 } else {
                     // Unique invoice number found. Use this ID to save the record.
-                    
+                    console.log(`Unique invoice number found: ${currentCheckId}. Saving record.`);
                     // Update the invoice data with the final determined ID
                     invoiceData.formData.invoiceNo = currentCheckId;
                     
                     result = await saveInvoiceRecord(invoiceData, currentCheckId);
-
+                    console.log(`Invoice saved successfully as ${result.invoiceNo}`);
                     // Final increment for the NEXT transaction.
                     await incrementInvoiceCounter();
                     console.log(`New record saved as ${currentCheckId}. Final counter increment successful.`);
@@ -253,7 +254,7 @@ export const generateAndSaveInvoice = async (invoiceData) => {
                 }
             }
         }
-        
+        console.log(`Invoice saved successfully as ${result.invoiceNo}`);
         return { status: result.status, invoiceNo: result.invoiceNo };
 
     } catch (error) {
